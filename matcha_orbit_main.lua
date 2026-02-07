@@ -91,35 +91,30 @@ local function setOrbitTarget(player)
     end
 end
 
--- Load p UI library; force-expose UILib to _G (Matcha/sandbox may not use _G)
-local pSrc = game:HttpGet("https://raw.githubusercontent.com/catowice/p/refs/heads/main/library.lua")
-loadstring(pSrc .. "\n_G.UILib = UILib\n")()
-local UILib = _G.UILib
-if not UILib then
-    error("[Orbit] p library failed to load: UILib not found")
-end
-UILib:SetMenuTitle("Orbit")
-UILib._menu_key = "f1"
-
-local orbitTab = UILib:Tab("Orbit")
-local playersSection = orbitTab:Section("Players")
-
-for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= Players.LocalPlayer then
-        local name = player.Name
-        local uid = player.UserId
-        local toggle = playersSection:Toggle("Orbit: " .. name, false, function(on)
-            if on then
-                setOrbitTarget(player)
-            else
-                if orbitTarget == player then
-                    setOrbitTarget(nil)
-                end
-            end
-        end)
-        orbitToggles[uid] = toggle
+-- Load p UI library (no injection; use global UILib if present)
+local UILib, orbitTab, playersSection
+local ok, err = pcall(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/catowice/p/refs/heads/main/library.lua"))()
+    UILib = _G.UILib
+    if not UILib then return end
+    UILib:SetMenuTitle("Orbit")
+    UILib._menu_key = "f1"
+    orbitTab = UILib:Tab("Orbit")
+    playersSection = orbitTab:Section("Players")
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer then
+            local name = player.Name
+            local uid = player.UserId
+            local toggle = playersSection:Toggle("Orbit: " .. name, false, function(on)
+                if on then setOrbitTarget(player)
+                elseif orbitTarget == player then setOrbitTarget(nil) end
+            end)
+            orbitToggles[uid] = toggle
+        end
     end
-end
+end)
+if not ok then warn("[Orbit] UI load failed:", err) end
+if not UILib then warn("[Orbit] Running without menu. Use script to set orbit target.") end
 
 local lp = Players.LocalPlayer
 
@@ -176,7 +171,7 @@ RunService.RenderStepped:Connect(function(dt)
         end
     end
     pcall(function()
-        UILib:Step()
+        if UILib and UILib.Step then UILib:Step() end
     end)
 end)
 
