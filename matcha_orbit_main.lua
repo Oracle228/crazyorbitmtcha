@@ -45,10 +45,21 @@ local function teleportToSpace(character)
     local hrp = character:FindFirstChild("HumanoidRootPart")
     local humanoid = character:FindFirstChild("Humanoid")
     if hrp then
-        hrp.CFrame = CFrame.new(SPACE_POS)
-        hrp.Velocity = Vector3.zero
-        hrp.AssemblyLinearVelocity = Vector3.zero
-        hrp.AssemblyAngularVelocity = Vector3.zero
+        pcall(function()
+            if CFrame and CFrame.new then
+                hrp.CFrame = CFrame.new(SPACE_POS)
+            elseif hrp.Position then
+                hrp.Position = SPACE_POS
+            end
+        end)
+        pcall(function()
+            if Vector3 then
+                local z = Vector3.zero or Vector3.new(0, 0, 0)
+                hrp.Velocity = z
+                if hrp.AssemblyLinearVelocity then hrp.AssemblyLinearVelocity = z end
+                if hrp.AssemblyAngularVelocity then hrp.AssemblyAngularVelocity = z end
+            end
+        end)
         hrp.Anchored = true
     end
     if humanoid then
@@ -96,20 +107,22 @@ local UILib, orbitTab, playersSection
 local ok, err = pcall(function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/catowice/p/refs/heads/main/library.lua"))()
     UILib = _G.UILib
-    if not UILib then return end
+    if not UILib or not UILib.Tab then return end
     UILib:SetMenuTitle("Orbit")
     UILib._menu_key = "f1"
     orbitTab = UILib:Tab("Orbit")
+    if not orbitTab or not orbitTab.Section then return end
     playersSection = orbitTab:Section("Players")
+    if not playersSection or not playersSection.Toggle then return end
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= Players.LocalPlayer then
+        if player ~= Players.LocalPlayer and player.Name and player.UserId then
             local name = player.Name
             local uid = player.UserId
             local toggle = playersSection:Toggle("Orbit: " .. name, false, function(on)
                 if on then setOrbitTarget(player)
                 elseif orbitTarget == player then setOrbitTarget(nil) end
             end)
-            orbitToggles[uid] = toggle
+            if toggle and uid then orbitToggles[uid] = toggle end
         end
     end
 end)
