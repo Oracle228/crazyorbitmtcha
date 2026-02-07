@@ -1,6 +1,6 @@
 --[[
   Orbit script for Matcha LuaVM.
-  If _G.OrbitChaos is set (e.g. by matcha_orbit_loader), uses OrbitChaos.getOffset(dt, t) for camera.
+  When _G.OrbitChaos is set (e.g. by matcha_orbit_loader), uses OrbitChaos.getOffset(dt, t) for camera.
 ]]
 
 local RunService = game:GetService("RunService")
@@ -116,15 +116,7 @@ for _, player in ipairs(Players:GetPlayers()) do
     end
 end
 
--- Initial teleport and freeze when character exists
 local lp = Players.LocalPlayer
-local function ensureSpaceAndFreeze()
-    local char = lp.Character
-    if not char then return end
-    if not orbitTarget then
-        teleportToSpace(char)
-    end
-end
 
 if lp.Character then
     teleportToSpace(lp.Character)
@@ -191,7 +183,6 @@ Players.PlayerRemoving:Connect(function(player)
     orbitToggles[player.UserId] = nil
 end)
 
--- Add new players to UI when they join
 Players.PlayerAdded:Connect(function(player)
     if player == Players.LocalPlayer then return end
     if playersSection and orbitToggles then
