@@ -1,10 +1,6 @@
 --[[
   Orbit script for Matcha LuaVM.
-  - Teleports you to "space" (123456789012, 123456789012, 123456789012) and freezes when orbit is off.
-  - GUI: all players + toggle "Orbit" per player. F1 toggles GUI (nulare's p lib).
-  - When orbit target's HP reaches 0, teleports you back to space.
-  Uses: RunService, game, Players, workspace.CurrentCamera.
-  Load p lib: loadstring(game:HttpGet('https://raw.githubusercontent.com/catowice/p/refs/heads/main/library.lua'))()
+  If _G.OrbitChaos is set (e.g. by matcha_orbit_loader), uses OrbitChaos.getOffset(dt, t) for camera.
 ]]
 
 local RunService = game:GetService("RunService")
@@ -157,7 +153,7 @@ RunService.Heartbeat:Connect(function()
             freeze(char)
         end
     end
-end
+end)
 
 -- RenderStepped: chaotic orbit camera + UI step
 RunService.RenderStepped:Connect(function(dt)
@@ -167,7 +163,12 @@ RunService.RenderStepped:Connect(function(dt)
         local root = targetChar and targetChar:FindFirstChild("HumanoidRootPart") or targetChar and targetChar:FindFirstChild("Torso")
         if root and Camera then
             local targetPos = root.Position
-            local offset = getChaosOffset(chaosTime)
+            local offset
+            if _G.OrbitChaos and _G.OrbitChaos.getOffset then
+                offset = _G.OrbitChaos.getOffset(dt, chaosTime)
+            else
+                offset = getChaosOffset(chaosTime)
+            end
             local camPos = targetPos + offset
             Camera.CFrame = CFrame.lookAt(camPos, targetPos)
             Camera.CameraType = Enum.CameraType.Scriptable
