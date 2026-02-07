@@ -91,8 +91,13 @@ local function setOrbitTarget(player)
     end
 end
 
--- Load p UI library
-local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/catowice/p/refs/heads/main/library.lua"))()
+-- Load p UI library; force-expose UILib to _G (Matcha/sandbox may not use _G)
+local pSrc = game:HttpGet("https://raw.githubusercontent.com/catowice/p/refs/heads/main/library.lua")
+loadstring(pSrc .. "\n_G.UILib = UILib\n")()
+local UILib = _G.UILib
+if not UILib then
+    error("[Orbit] p library failed to load: UILib not found")
+end
 UILib:SetMenuTitle("Orbit")
 UILib._menu_key = "f1"
 
