@@ -7,7 +7,13 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local Camera = workspace.CurrentCamera
 
-local SPACE_POS = Vector3.new(123456789012, 123456789012, 123456789012)
+local Vector3 = _G.Vector3
+local CFrame = _G.CFrame
+local SPACE_POS
+if Vector3 and Vector3.new then
+    local ok, v = pcall(function() return Vector3.new(123456789012, 123456789012, 123456789012) end)
+    if ok and v then SPACE_POS = v end
+end
 local BASE_RADIUS = 12
 local RADIUS_CHAOS = 2.5
 local THETA_SPEED = 1.7
@@ -37,25 +43,25 @@ local function getChaosOffset(t)
     local x = r * math.cos(phi) * math.cos(theta)
     local y = r * math.sin(phi)
     local z = r * math.cos(phi) * math.sin(theta)
-    return Vector3.new(x, y, z)
+    if Vector3 and Vector3.new then return Vector3.new(x, y, z) end
+    return nil
 end
 
 local function teleportToSpace(character)
-    if not character then return end
+    if not character or not SPACE_POS then return end
     local hrp = character:FindFirstChild("HumanoidRootPart")
     local humanoid = character:FindFirstChild("Humanoid")
     if hrp then
         pcall(function()
-            if CFrame and CFrame.new then
-                hrp.CFrame = CFrame.new(SPACE_POS)
-            elseif hrp.Position then
-                hrp.Position = SPACE_POS
-            end
+            if CFrame and CFrame.new then hrp.CFrame = CFrame.new(SPACE_POS) end
+        end)
+        pcall(function()
+            if hrp.Position then hrp.Position = SPACE_POS end
         end)
         pcall(function()
             if Vector3 then
-                local z = Vector3.zero or Vector3.new(0, 0, 0)
-                hrp.Velocity = z
+                local z = Vector3.zero or (Vector3.new and Vector3.new(0, 0, 0))
+                if z then hrp.Velocity = z end
                 if hrp.AssemblyLinearVelocity then hrp.AssemblyLinearVelocity = z end
                 if hrp.AssemblyAngularVelocity then hrp.AssemblyAngularVelocity = z end
             end
@@ -74,13 +80,14 @@ local function freeze(character)
     local humanoid = character:FindFirstChild("Humanoid")
     if hrp then
         hrp.Anchored = true
-        hrp.Velocity = Vector3.zero
-        hrp.AssemblyLinearVelocity = Vector3.zero
-        hrp.AssemblyAngularVelocity = Vector3.zero
+        pcall(function()
+            if Vector3 then
+                local z = Vector3.zero or (Vector3.new and Vector3.new(0, 0, 0))
+                if z then hrp.Velocity = z; if hrp.AssemblyLinearVelocity then hrp.AssemblyLinearVelocity = z end; if hrp.AssemblyAngularVelocity then hrp.AssemblyAngularVelocity = z end end
+            end
+        end)
     end
-    if humanoid then
-        humanoid.PlatformStand = true
-    end
+    if humanoid then humanoid.PlatformStand = true end
 end
 
 local function unfreeze(character)
@@ -102,9 +109,11 @@ local function setOrbitTarget(player)
     end
 end
 
--- Load p UI library (no injection; use global UILib if present)
+-- Load p UI library (disabled in Matcha - p uses Drawing/inputs that often fail; orbit works without UI)
 local UILib, orbitTab, playersSection
+local USE_P_UI = _G.OrbitEnablePUI == true
 local ok, err = pcall(function()
+    if not USE_P_UI then return end
     loadstring(game:HttpGet("https://raw.githubusercontent.com/catowice/p/refs/heads/main/library.lua"))()
     UILib = _G.UILib
     if not UILib or not UILib.Tab then return end
@@ -174,9 +183,14 @@ RunService.RenderStepped:Connect(function(dt)
             else
                 offset = getChaosOffset(chaosTime)
             end
+            if not offset then return end
             local camPos = targetPos + offset
-            Camera.CFrame = CFrame.lookAt(camPos, targetPos)
-            Camera.CameraType = Enum.CameraType.Scriptable
+            pcall(function()
+                if CFrame and CFrame.lookAt then
+                    Camera.CFrame = CFrame.lookAt(camPos, targetPos)
+                    Camera.CameraType = Enum.CameraType.Scriptable
+                end
+            end)
         end
     else
         if Camera then
