@@ -1,7 +1,7 @@
 --[[
   Chaotic orbit offset for camera.
   Returns offset from target: not a clean circle; desynced phases, small random deviations.
-  Use: getOffset(dt, totalTime) -> offset Vector3 in world space (multiply by radius, add to target).
+  Use: getOffset(dt, totalTime) -> offset Vector3 in world space (add to target position).
 ]]
 
 local BASE_RADIUS = 12
